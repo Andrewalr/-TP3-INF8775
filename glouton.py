@@ -201,7 +201,8 @@ if __name__ == '__main__':
         i=0
         energie=0
         for a in arretes:
-            energie = energie + H[sites[arretes[i][0]].atome][sites[arretes[i][1]].atome]
+            energie = energie + int(H[sites[arretes[i][0]].atome][sites[arretes[i][1]].atome])
+            i=i+1
 
         print(energie)      
         return energie
