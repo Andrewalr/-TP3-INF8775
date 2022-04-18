@@ -4,10 +4,15 @@ import time
 from operator import attrgetter
 from operator import itemgetter
 from pprint import pprint
+import copy
+import random
+import time
 
+path = sys.argv[1]
+affichageSol = sys.argv[2]
 
     
-start = time.perf_counter()
+
 ################################################################################
 
 
@@ -40,16 +45,16 @@ if __name__ == '__main__':
     a = 0
 
     energie = 0
+    energieSolution = 0
 
     # ouvrir le fichier a lire
-    file = open('test1', 'r')
+    file = open(path, 'r')
     Lines = file.readlines()
     count = 0
 
     #lire le fichier
     for line in Lines:
         count += 1
-        # print("Line{}: {}".format(count, line.strip()))
 
     # premiere ligne correspond aux paramaetres t k et A
     currentLine = Lines[0].split()
@@ -86,17 +91,14 @@ if __name__ == '__main__':
         i=i+1
 
     file.close()
-    
     #creer liste darretes qui se repete
     for a in arretes:
         a1 = [a[0], a[1]]
         a2 = [a[1], a[0]]
         arretesLong.append(a1)
         arretesLong.append(a2)
-        sorted(arretesLong, key=itemgetter(0))
 
     #creer le graph
-    
     for currentLine in arretesLong:
         voisin = []
         if currentLine[0] in mygraph:
@@ -106,7 +108,6 @@ if __name__ == '__main__':
         else:
             voisin = [currentLine[1]]
             mygraph.update({currentLine[0]:voisin})
-
     #creer les sites
 
     i=0
@@ -124,6 +125,7 @@ if __name__ == '__main__':
         i=i+1
     
     # trouver le site avec le plus de voisin 
+ 
     max_siteid= max(sites, key=lambda site: site.nbVoisin).id
     i =0
     k =0
@@ -137,18 +139,13 @@ if __name__ == '__main__':
                 atome1=k
                 atome2=i
                 k = k+1
-        i=i+1        
+        i=i+1     
 
     #trouver l atome du couple min qui est en plus grande quantite
-    ########a tester : inverSER CA
-    if(typeatomes[atome1]<typeatomes[atome2]):
+    if(typeatomes[atome1]>typeatomes[atome2]):
         atomeDepart = atome2
     else:
         atomeDepart = atome1
-
-    print(atomeDepart)
-    
-
 
     def trouverMeilleurAtomeDisponible(atomePere):
         j=0
@@ -169,12 +166,10 @@ if __name__ == '__main__':
 
     #assigner au site avec le plus de voisin l atome du couple min qui est en plus grande quantite
     sites[max_siteid].atome = atomeDepart
-    pprint(vars(sites[max_siteid]))
     typeatomes[atomeDepart] = typeatomes[atomeDepart]-1
 
     def bfs(Graphe, Sommet):
         couleur = {s: "vert" for s in Graphe}
-        print(couleur)
         Pere = {}
         Pere[Sommet] = None
         couleur[Sommet] = "orange"
@@ -196,26 +191,57 @@ if __name__ == '__main__':
 
         return Pere 
 
-    def calculerEnergie(arretes):
-
+    #calcul de lenergie
+    def calculerEnergie(arretes, sites):
         i=0
         energie=0
         for a in arretes:
             energie = energie + int(H[sites[arretes[i][0]].atome][sites[arretes[i][1]].atome])
-            i=i+1
-
-        print(energie)      
+            i=i+1     
         return energie
 
-    bfs(mygraph, sites[max_siteid].id)        
-
-    calculerEnergie(arretes)
-    print(typeatomes)
-
+    #bfs(mygraph, sites[max_siteid].id)    
+    bfs(mygraph, sites[0].id)        
+   
     def afficherSolution(sites):
-        i=0
-        for site in sites:
-            print(sites[i].atome)
-            i=i+1
+        ligne =""
+        with open('sol.txt', 'w') as f:
+            i=0
+            for site in sites:
+                ligne += str(sites[i].atome)
+                ligne += ' '
+                f.write(str(sites[i].atome))
+                f.write(' ')
+                i=i+1
+            if(affichageSol == "true"):
+                print(ligne)
+
+    energieSolution = calculerEnergie(arretes,sites)
+
+    def ameliorerSolution():
+        global sites
+        global energieSolution 
+        while (True):
+            pareils = True
+            while pareils:
+                pareils = False
+                randoms = random.sample(range(len(sites)), 2)
+                if(sites[randoms[0]].atome == sites[randoms[1]].atome):
+                    pareils = True 
+            
+            temp = sites[randoms[0]]
+            copySites = copy.deepcopy(sites)
+            copySites[randoms[0]]= copySites[randoms[1]]
+            copySites[randoms[1]]= temp
+            newEnergie = calculerEnergie(arretes,copySites)
+            if(newEnergie< energieSolution):
+                sites = copy.deepcopy(copySites)
+                energieSolution = newEnergie
+                if(affichageSol != "true"):
+                    print(energieSolution)
+                afficherSolution(sites)
+
+        currentEnergie = calculerEnergie(arretes,sites)
+    ameliorerSolution()
+
     
-    afficherSolution(sites)
